@@ -146,7 +146,6 @@ public class Dump
             // after the bytes are written
             final MessageDigest md5 = MessageDigest.getInstance("MD5");
             String id = null;
-            HistoryReference type = null;
             int status = -1;
             long millis = -1;
             String resHeaders = null;
@@ -161,7 +160,10 @@ public class Dump
                     id = value = rs.getString(i);
                 } else if ("HISTTYPE".equals(name)) {
                     value = rs.getString(i);
-                    type = HistoryReference.byValue(rs.getInt(i));
+                    final HistoryReference type = HistoryReference.byValue(rs.getInt(i));
+                    if (HistoryReference.TYPE_PROXIED != type) {
+                        continue;
+                    }
                 } else if ("STATUSCODE".equals(name)) {
                     value = rs.getString(i);
                     status = rs.getInt(i);
@@ -187,24 +189,29 @@ public class Dump
                             .replace("\r", "\\r")
                             .replace("\n", "\\n")
                             ;
-                } else if ("RESHEADER".equals(name)) {
-                    value = rs.getString(i)
+                } else if ("REQHEADER".equals(name)) {
+                    final String str = rs.getString(i);
+                    value = str
                             .replace("\r", "\\r")
                             .replace("\n", "\\n")
                             ;
-                    resHeaders = value.replaceFirst("HTTP/1.1[^\n]*\n", "");
+                    resHeaders = str.replaceFirst("HTTP/1.1[^\n]*\n", "");
                     // kill the extra "\r\n"
                     if (! resHeaders.isEmpty()) {
                         resHeaders = resHeaders.substring(0, resHeaders.length()-2);
                     }
-                } else if ("RESBODY".equals(name)) {
-                    if (null == type) {
-                        throw new IllegalStateException("Expected to have seen type");
-                    }
+                } else if ("REQBODY".equals(name)) {
                     value = "<<data>>";
-                    if (HistoryReference.TYPE_PROXIED != type) {
+                    final InputStream stream = rs.getBinaryStream(i);
+                    if (null == stream) {
+                        LOG.warning(format("%n%n%nSkipping NULL %s%n", name));
                         continue;
                     }
+                    // no need to close the S.O.S. as it's not a real stream
+                    streamOut(stream, new SignatureOutputStream(sig));
+                    stream.close();
+                } else if ("RESBODY".equals(name)) {
+                    value = "<<data>>";
                     final InputStream stream = rs.getBinaryStream(i);
                     if (null == stream) {
                         LOG.warning(format("%n%n%nSkipping NULL %s%n", name));
@@ -212,18 +219,11 @@ public class Dump
                     }
                     final File tmpFile = new File(toHexString(md5.digest()));
                     final FileOutputStream fOut = new FileOutputStream(tmpFile);
-                    int bytesWritten = 0;
-                    byte[] buffer = new byte[8096];
-                    int br;
-                    while (-1 != (br = stream.read(buffer))) {
-                        sig.write(buffer, 0, br);
-                        fOut.write(buffer, 0, br);
-                        bytesWritten += br;
-                    }
+                    streamOut(stream, fOut);
                     fOut.close();
                     stream.close();
-                    LOG.finer(format("Wrote<%s> %s<%s>#%d to %s%n",
-                            id, sig.method, sig.uri, bytesWritten, tmpFile.getName()));
+                    LOG.finer(format("Wrote<%s> %s<%s> to %s%n",
+                            id, sig.method, sig.uri, tmpFile.getName()));
                     theSig = sig.toString();
                     String dirName = theSig;
                     String hashPart = dirName.substring(0, 2);
@@ -257,8 +257,6 @@ public class Dump
                     metaOut.write(format(", 'response_url': '%s'}%n", sig.uri));
                     metaOut.close();
                     LOG.fine(format("Output is in %s%n%n", outDir));
-                } else if ("REQBODY".equals(name)) {
-                    value = "<<data>>";
                 } else {
                     value = rs.getString(i);
                 }
@@ -272,6 +270,32 @@ public class Dump
         st.close();
         conn.close();
         out.close();
+    }
+
+    static void streamOut(InputStream stream, OutputStream out) throws IOException {
+        byte[] buffer = new byte[8096];
+        int br;
+        while (-1 != (br = stream.read(buffer))) {
+            out.write(buffer, 0, br);
+        }
+        out.close();
+    }
+
+    static class SignatureOutputStream extends OutputStream
+    {
+        public SignatureOutputStream(SignatureParts sig) {
+            _sig = sig;
+        }
+
+        @Override
+        public void write(byte[] data, int start, int len) throws IOException {
+            _sig.write(data, start, len);
+        }
+        @Override
+        public void write(int b) throws IOException {
+            _sig.write(new byte[] { (byte)(0xFF & b) }, 0, 1);
+        }
+        private SignatureParts _sig;
     }
 
     static class SignatureParts
