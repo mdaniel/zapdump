@@ -5,7 +5,20 @@
   <version>1.0</version>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jar.useDefaultManifestFile>true</jar.useDefaultManifestFile>
   </properties>
+  <build>
+    <resources>
+        <resource>
+            <!-- all this is required just to turn filtering on -->
+            <directory>${project.basedir}/src/main/resources</directory>
+            <includes>
+                <include>META-INF/MANIFEST.MF</include>
+            </includes>
+            <filtering>true</filtering>
+        </resource>
+    </resources>
+  </build>
   <dependencies>
       <dependency>
           <groupId>org.hsqldb</groupId>
