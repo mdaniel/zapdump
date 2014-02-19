@@ -81,16 +81,35 @@ public class Dump
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        // compareSignature(args[0], args[1]);
-        dumpDatabase(args[0]);
+   public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            System.err.printf("Usage: %s -check-sig VERB URL DIR | -dump HSQLDB%n", Dump.class.getName());
+            System.exit(1);
+        }
+        if ("-check-sig".equals(args[0])) {
+            final String httpVerb = args[0];
+            final String url = args[1];
+            final String theDir = args[2];
+            compareSignature(httpVerb, url, theDir);
+        } else if ("-dump".equals(args[0])) {
+            dumpDatabase(args[1]);
+        } else {
+            System.err.printf("Unrecognized argument %s%n", args[0]);
+            System.exit(1);
+        }
     }
 
-    @SuppressWarnings("unused")
-    public static void compareSignature(String url, String theDirectory) throws Exception {
+    public static void compareSignature(String verb, String url, String theDirectory) throws IOException {
         final File dir = new File(theDirectory);
+        if (! dir.exists()) {
+            throw new IOException(String.format(
+                    "Your directory has gone 404: %s%n", dir));
+        } else if (! dir.isDirectory()) {
+            throw new IOException(String.format(
+                    "Expected that path to be a directory: %s%n", dir));
+        }
         SignatureParts sig = new SignatureParts();
-        sig.setRequestMethod("GET");
+        sig.setRequestMethod(verb);
         sig.setRequestUrl(url);
         FileInputStream fin = new FileInputStream(new File(dir, "response_body"));
         byte[] buffer = new byte[8096];
