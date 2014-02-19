@@ -247,14 +247,14 @@ public class Dump
                     headOut.write(resHeaders);
                     headOut.close();
 
-                    final File meta = new File(outDir, "meta");
+                    final File meta = new File(outDir, "meta.json");
                     final PrintWriter metaOut = new PrintWriter(new FileWriter(meta));
                     // this is not json, it is a python dict str()ed
-                    metaOut.write(format("{'url': '%s'", sig.uri));
-                    metaOut.write(format(",'status': %d", status));
-                    metaOut.write(format(", 'method': '%s'", sig.method));
-                    metaOut.write(format(", 'timestamp': %d.00000", millis));
-                    metaOut.write(format(", 'response_url': '%s'}%n", sig.uri));
+                    metaOut.write(format("{\"url\": \"%s\"", sig.uri));
+                    metaOut.write(format(",\"status\": %d", status));
+                    metaOut.write(format(", \"method\": \"%s\"", sig.method));
+                    metaOut.write(format(", \"timestamp\": %d.00000", millis));
+                    metaOut.write(format(", \"response_url\": \"%s\"}%n", sig.uri));
                     metaOut.close();
                     LOG.fine(format("Output is in %s%n%n", outDir));
                 } else {
