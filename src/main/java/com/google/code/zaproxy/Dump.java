@@ -80,21 +80,7 @@ public class Dump
             throw new IllegalArgumentException("I do not understand "+value);
         }
     }
-    /*
-{cat=PUBLIC}{sch=PUBLIC}Name=ALERT [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=CONTEXT_DATA [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=HISTORY [type=TABLE]
-    HISTORYID	SESSIONID	HISTTYPE	STATUSCODE	TIMESENTMILLIS	TIMEELAPSEDMILLIS	METHOD	URI	REQHEADER	REQBODY	RESHEADER	RESBODY	TAG	NOTE	RESPONSEFROMTARGETHOST
 
-{cat=PUBLIC}{sch=PUBLIC}Name=PARAM [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=SCAN [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=SESSION [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=SESSION_URL [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=TAG [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=WEBSOCKET_CHANNEL [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=WEBSOCKET_MESSAGE [type=TABLE]
-{cat=PUBLIC}{sch=PUBLIC}Name=WEBSOCKET_MESSAGE_FUZZ [type=TABLE]
-     */
     public static void main(String[] args) throws Exception {
         // compareSignature(args[0], args[1]);
         dumpDatabase(args[0]);
