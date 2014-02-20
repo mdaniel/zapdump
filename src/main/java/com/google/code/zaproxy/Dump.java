@@ -144,17 +144,6 @@ public class Dump
                             .replace("\r", "\\r")
                             .replace("\n", "\\n")
                             ;
-                } else if ("REQHEADER".equals(name)) {
-                    final String str = rs.getString(i);
-                    value = str
-                            .replace("\r", "\\r")
-                            .replace("\n", "\\n")
-                            ;
-                    resHeaders = str.replaceFirst("HTTP/1.1[^\n]*\n", "");
-                    // kill the extra "\r\n"
-                    if (! resHeaders.isEmpty()) {
-                        resHeaders = resHeaders.substring(0, resHeaders.length()-2);
-                    }
                 } else if ("REQBODY".equals(name)) {
                     value = "<<data>>";
                     final InputStream stream = rs.getBinaryStream(i);
@@ -165,6 +154,17 @@ public class Dump
                     // no need to close the S.O.S. as it's not a real stream
                     streamOut(stream, new SignatureOutputStream(sig));
                     stream.close();
+                } else if ("RESHEADER".equals(name)) {
+                    final String str = rs.getString(i);
+                    value = str
+                            .replace("\r", "\\r")
+                            .replace("\n", "\\n")
+                    ;
+                    resHeaders = str.replaceFirst("HTTP/1.1[^\n]*\n", "");
+                    // kill the extra "\r\n" at the end
+                    if (! resHeaders.isEmpty()) {
+                        resHeaders = resHeaders.substring(0, resHeaders.length()-2);
+                    }
                 } else if ("RESBODY".equals(name)) {
                     value = "<<data>>";
                     final InputStream stream = rs.getBinaryStream(i);
