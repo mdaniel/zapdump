@@ -35,52 +35,6 @@ public class Dump
         QUERY_PCHAR = Pattern.compile("(?:[A-Za-z]|[0-9]|[-\\._~]|[!$&'*+;=]|[:@]|[/?])");
     }
 
-    /** org/parosproxy/paros/model/HistoryReference.java */
-    @SuppressWarnings("unused")
-    enum HistoryReference
-    {
-        /**
-         * Temporary type = not retrieved from history.  To be deleted.
-         */
-        TYPE_TEMPORARY(0),
-
-        /**
-         * A HTTP message that was proxied through ZAP.
-         */
-        TYPE_PROXIED(1),
-
-        /**
-         * A HTTP message sent by the user from within ZAP, for example, using "Manual Request Editor" or "Resend" dialogues.
-         */
-        TYPE_ZAP_USER(15),
-
-        TYPE_SPIDER(2),
-        TYPE_SCANNER(3),
-        TYPE_HIDDEN(6),
-        // ZAP: Added TYPE_BRUTE_FORCE
-        TYPE_BRUTE_FORCE(7),
-        TYPE_FUZZER(8),
-        // ZAP: Added TYPE_SPIDER_TASK for use in spider tasks
-        TYPE_SPIDER_TASK(9),
-        // ZAP: Added TYPE_SPIDER_AJAX to use in spider ajax.
-        TYPE_SPIDER_AJAX(10),
-        // ZAP: Added TYPE_AUTHENTICATION for use in authentication methods
-        TYPE_AUTHENTICATION(11),
-        TYPE_RESERVED_11(12);	// Reserved by Psiinon
-        private HistoryReference(int value) {
-            this.value = value;
-        }
-        private int value;
-        public static HistoryReference byValue(int value) {
-            for (final HistoryReference self : values()) {
-                if (self.value == value) {
-                    return self;
-                }
-            }
-            throw new IllegalArgumentException("I do not understand "+value);
-        }
-    }
-
    public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.err.printf("Usage: %s -check-sig VERB URL DIR | -dump HSQLDB%n", Dump.class.getName());
@@ -165,10 +119,6 @@ public class Dump
                     id = value = rs.getString(i);
                 } else if ("HISTTYPE".equals(name)) {
                     value = rs.getString(i);
-                    final HistoryReference type = HistoryReference.byValue(rs.getInt(i));
-                    if (HistoryReference.TYPE_PROXIED != type) {
-                        continue;
-                    }
                 } else if ("STATUSCODE".equals(name)) {
                     value = rs.getString(i);
                     status = rs.getInt(i);
