@@ -109,6 +109,7 @@ public class Dump
             long millis = -1;
             String resHeaders = null;
             String theSig = null;
+            boolean capture = false;
             for (int i = 1; i <= columnCount; i++) {
                 if (i != 1) {
                     out.print("\t");
@@ -119,6 +120,7 @@ public class Dump
                     id = value = rs.getString(i);
                 } else if ("HISTTYPE".equals(name)) {
                     value = rs.getString(i);
+                    capture = (1 == Integer.parseInt(value));
                 } else if ("STATUSCODE".equals(name)) {
                     value = rs.getString(i);
                     status = rs.getInt(i);
@@ -167,6 +169,7 @@ public class Dump
                     }
                 } else if ("RESBODY".equals(name)) {
                     value = "<<data>>";
+                    if (capture) {
                     final InputStream stream = rs.getBinaryStream(i);
                     if (null == stream) {
                         LOG.warning(format("%n%n%nSkipping NULL %s%n", name));
@@ -195,7 +198,12 @@ public class Dump
                         throw new IOException(format("Unable to rename %s to %s", tmpFile, res_body));
                     }
                     if (null == resHeaders) {
-                        throw new IOException("Expected to find response_headers but no");
+                        throw new IOException(format(
+                                "Expected to find response_headers on row %s but no", id));
+                    }
+                    if (resHeaders.isEmpty()) {
+                        throw new IOException(format(
+                                "Expected response_headers to be non-empty on row %s", id));
                     }
                     final File resHeadersF = new File(outDir, "response_headers");
                     final PrintWriter headOut = new PrintWriter(new FileWriter(resHeadersF));
@@ -212,6 +220,7 @@ public class Dump
                     metaOut.write(format(", \"response_url\": \"%s\"}%n", sig.uri));
                     metaOut.close();
                     LOG.fine(format("Output is in %s%n%n", outDir));
+                    }
                 } else {
                     value = rs.getString(i);
                 }
