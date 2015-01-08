@@ -14,10 +14,13 @@ class Request(object):
         self.body = body
 
 the_url = sys.argv[1]
-the_dir = sys.argv[2]
-fh = open('%s/response_body' % the_dir, 'rb')
-body = fh.read()
-fh.close()
+body = ''
+if len(sys.argv) > 2:
+    the_dir = sys.argv[2]
+    body_file = '%s/request_body' % the_dir
+    if os.path.isfile(body_file):
+        with open(body_file, 'rb') as fh:
+            body = fh.read()
 req = Request(the_url, body)
 output = request_fingerprint(req)
 print('output := %r' % output)
