@@ -6,6 +6,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jar.useDefaultManifestFile>true</jar.useDefaultManifestFile>
+    <hsqldb.version>2.2.9</hsqldb.version>
   </properties>
   <build>
     <resources>
@@ -23,7 +24,7 @@
       <dependency>
           <groupId>org.hsqldb</groupId>
           <artifactId>hsqldb</artifactId>
-          <version>2.2.9</version>
+          <version>${hsqldb.version}</version>
       </dependency>
       <dependency>
           <groupId>org.testng</groupId>

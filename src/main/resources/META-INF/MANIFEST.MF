@@ -3,3 +3,4 @@ Specification-Title: ZapDumper
 Specification-Version: 1
 Implementation-Version: ${project.version}
 Main-Class: com.google.code.zaproxy.Dump
+Class-Path: hsqldb-${hsqldb.version}.jar
