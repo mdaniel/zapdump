@@ -505,7 +505,7 @@ s.
         // final URI uri = new URI(scheme, userinfo, host.toLowerCase(), port, path, query, fragment);
         // we need to do this escape restoration or the uppercase escape
         // mechanism will only see %25 which is, of course, already uppercase
-        final String almostFinal = new URI(scheme, userinfo, host, port, path, query, fragment).toString()
+        String uriS = new URI(scheme, userinfo, host, port, path, query, fragment).toString();
                 /* (
                 scheme + "://" +
                 (null == userinfo ? "" : userinfo) +
@@ -514,10 +514,21 @@ s.
                 (null == query ? "" : "?" + query) +
                 (null == fragment ? "" : "#" + fragment)
                 )*/
-                .replace("%25", "%") // URI has helpfully(sic) escaped our escapes from the QS
-                ;
+        // URI has helpfully(sic) escaped our escapes from the QS
+        final String withPercents = uriS.replace("%25", "%");
+        final int qMark = withPercents.indexOf('?');
+        final String almost;
+        if (-1 != qMark) {
+            // URI seems to disagree with all instances of ","
+            // but Scrapy permits it in the PATH only, not QUERY
+            almost = withPercents.substring(0, qMark)
+                    .replace("%2C", ",") +
+                    withPercents.substring(qMark);
+        } else {
+            almost = withPercents.replace("%2C", ",");
+        }
         //noinspection UnnecessaryLocalVariable
-        final String result = upperEscapeCodes(almostFinal);
+        final String result = upperEscapeCodes(almost);
         return result;
     }
 

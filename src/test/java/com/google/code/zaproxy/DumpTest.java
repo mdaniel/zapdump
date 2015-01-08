@@ -14,6 +14,7 @@ public class DumpTest {
 
     @DataProvider(name = "urlPairs")
     public Object[][] getUrlPairs() {
+        // {input, expected}
         return new Object[][] {
             // pathological cases
             {"http://www.example.com",
@@ -95,6 +96,19 @@ public class DumpTest {
             {"http://user:pass@www.example.com/do?a=1#frag",
              "http://user:pass@www.example.com/do?a=1#frag"
             },
+            {
+            "https://www.google.com/xjs/_/js/k=xjs.s.en_US.Pk6WM5xCqOI.O/m=c,sb_mob,jp,rcs,ivf,jsa,mbsf,bct,elog,r,hsm,pcc,csi/am=cEYFAg/rt=j/d=1/sv=1/rs=AItRSTPrWBBy_Zt149JrvH_iQSWBlQ023Q",
+            "https://www.google.com/xjs/_/js/k=xjs.s.en_US.Pk6WM5xCqOI.O/m=c,sb_mob,jp,rcs,ivf,jsa,mbsf,bct,elog,r,hsm,pcc,csi/am=cEYFAg/rt=j/d=1/sv=1/rs=AItRSTPrWBBy_Zt149JrvH_iQSWBlQ023Q"
+            },
         };
+    }
+
+    @Test
+    public void testBizarreUrlHash() throws Exception {
+        final String expectedSig = "71f427022b5b99cbe5bca86ef6d7961566730818";
+        Dump.SignatureParts sig = new Dump.SignatureParts();
+        sig.setRequestMethod("GET");
+        sig.setRequestUrl("https://www.google.com/xjs/_/js/k=xjs.s.en_US.Pk6WM5xCqOI.O/m=c,sb_mob,jp,rcs,ivf,jsa,mbsf,bct,elog,r,hsm,pcc,csi/am=cEYFAg/rt=j/d=1/sv=1/rs=AItRSTPrWBBy_Zt149JrvH_iQSWBlQ023Q");
+        assertEquals(sig.toString(), expectedSig);
     }
 }
