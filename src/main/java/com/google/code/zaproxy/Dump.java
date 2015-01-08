@@ -35,10 +35,16 @@ public class Dump
         QUERY_PCHAR = Pattern.compile("(?:[A-Za-z]|[0-9]|[-\\._~]|[!$&'*+;=]|[:@]|[/?])");
     }
 
-   public static void main(String[] args) throws Exception {
+    private static void usageAndDie(String msg) {
+        System.err.println(msg);
+        System.err.println("  Usage: $0 -check-sig verb url scrapy_cache_dir");
+        System.err.println("            -dump hsqldb-filename");
+        System.err.println("            -dump hsqldb-filename -url urn://...");
+        System.exit(1);
+    }
+    public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            System.err.printf("Usage: %s -check-sig VERB URL DIR | -dump HSQLDB%n", Dump.class.getName());
-            System.exit(1);
+            usageAndDie("I require an action argument");
         }
         if ("-check-sig".equals(args[0])) {
             final String httpVerb = args[0];
@@ -46,10 +52,22 @@ public class Dump
             final String theDir = args[2];
             compareSignature(httpVerb, url, theDir);
         } else if ("-dump".equals(args[0])) {
-            dumpDatabase(args[1]);
+            final String dbName = args[1];
+            if (2 == args.length) {
+                final int rc = dumpDatabase(dbName);
+                if (0 != rc) {
+                    System.exit(rc);
+                }
+            } else if (4 == args.length && "-url".equals(args[2])) {
+                final String onlyUrl = args[3];
+                System.out.printf("Restricting my dump to \"%s\"%n", onlyUrl);
+                final int rc = dumpDatabase(dbName, onlyUrl);
+                if (0 != rc) {
+                    System.exit(rc);
+                }
+            }
         } else {
-            System.err.printf("Unrecognized argument %s%n", args[0]);
-            System.exit(1);
+            usageAndDie("Unrecognized argument" + args[0]);
         }
     }
 
