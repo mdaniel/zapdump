@@ -177,15 +177,16 @@ public class Dump
                             .replace("\n", "\\n")
                             ;
                 } else if ("REQBODY".equals(name)) {
-                    value = "<<data>>";
                     final InputStream stream = rs.getBinaryStream(i);
                     if (null == stream) {
                         LOG.warning(format("%n%n%nSkipping NULL %s%n", name));
                         continue;
                     }
                     // no need to close the S.O.S. as it's not a real stream
-                    streamOut(stream, new SignatureOutputStream(sig));
+                    final SignatureOutputStream sos = new SignatureOutputStream(sig);
+                    streamOut(stream, sos);
                     stream.close();
+                    value = sos.written ? "<<data>>" : "NULL";
                 } else if ("RESHEADER".equals(name)) {
                     final String str = rs.getString(i);
                     value = str
@@ -198,8 +199,8 @@ public class Dump
                         resHeaders = resHeaders.substring(0, resHeaders.length()-2);
                     }
                 } else if ("RESBODY".equals(name)) {
-                    value = "<<data>>";
                     if (capture) {
+                        value = "<<data>>";
                     final InputStream stream = rs.getBinaryStream(i);
                     if (null == stream) {
                         LOG.warning(format("%n%n%nSkipping NULL %s%n", name));
@@ -364,6 +365,7 @@ s.
                         LOG.fine(format("Output is in %s%n%n", outDir));
                         found++;
                     } else {
+                        value = "NULL";
                         LOG.fine(format("Skipping URI %s due to wrong HISTTYPE", sig.uri));
                     }
                 } else {
@@ -405,16 +407,19 @@ s.
 
     static class SignatureOutputStream extends OutputStream
     {
+        public boolean written;
         public SignatureOutputStream(SignatureParts sig) {
             _sig = sig;
         }
 
         @Override
         public void write(byte[] data, int start, int len) throws IOException {
+            written = true;
             _sig.write(data, start, len);
         }
         @Override
         public void write(int b) throws IOException {
+            written = true;
             _sig.write(new byte[] { (byte)(0xFF & b) }, 0, 1);
         }
         private SignatureParts _sig;
