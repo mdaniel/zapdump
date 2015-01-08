@@ -75,14 +75,26 @@ public class Dump
         System.out.println("Signature := "+sig);
     }
 
-    public static void dumpDatabase(final String databaseFilename) throws Exception {
+    public static int dumpDatabase(final String databaseFilename) throws Exception {
+        return dumpDatabase(databaseFilename, null);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public static int dumpDatabase(final String databaseFilename, final String onlyUrl)
+        throws Exception {
         final String tsvFilename = format("%s.tsv", databaseFilename);
         final PrintStream out = new PrintStream(new FileOutputStream(tsvFilename));
         System.setProperty("jdbc.drivers", "org.hsqldb.jdbc.JDBCDriver");
         final Connection conn = DriverManager.getConnection(
                 format("jdbc:hsqldb:%s", databaseFilename));
-        final Statement st = conn.createStatement();
-        final ResultSet rs = st.executeQuery("SELECT * FROM HISTORY");
+        final PreparedStatement st = conn.prepareStatement(
+                "SELECT * FROM HISTORY" +
+                        (onlyUrl == null ? "" : " WHERE URI = ?")
+        );
+        if (null != onlyUrl) {
+            st.setString(1, onlyUrl);
+        }
+        final ResultSet rs = st.executeQuery();
         final ResultSetMetaData md = rs.getMetaData();
         final int columnCount = md.getColumnCount();
         final String[] columnNames = new String[columnCount];
@@ -97,8 +109,9 @@ public class Dump
         }
         out.printf("\t%s|%s", "VARCHAR", "FINGERPRINT");
         out.println();
-
+        int found = 0;
         while (rs.next()) {
+            found++;
             final SignatureParts sig = new SignatureParts();
             // this is for the temp name
             // because we won't have the fingerprint until
@@ -343,10 +356,23 @@ s.
             out.print(theSig);
             out.println();
         }
+        int rc;
+        if (0 == found) {
+            if (null == onlyUrl) {
+                System.err.println("It appears that database is empty; no rows in HISTORY");
+            } else {
+                System.err.printf("Unable to locate any URL like \"%s\"%n", onlyUrl);
+            }
+            rc = 1;
+        } else {
+            System.out.printf("Exported %d rows%n", found);
+            rc = 0;
+        }
         rs.close();
         st.close();
         conn.close();
         out.close();
+        return rc;
     }
 
     static void streamOut(InputStream stream, OutputStream out) throws IOException {
