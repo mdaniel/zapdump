@@ -42,6 +42,7 @@ public class Dump
         System.err.println("            -dump hsqldb-filename -url urn://...");
         System.exit(1);
     }
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usageAndDie("I require an action argument");
@@ -131,10 +132,6 @@ public class Dump
         final int dataHistType = 1;
         while (rs.next()) {
             final SignatureParts sig = new SignatureParts();
-            // this is for the temp name
-            // because we won't have the fingerprint until
-            // after the bytes are written
-            final MessageDigest md5 = MessageDigest.getInstance("MD5");
             String id = null;
             int status = -1;
             long millis = -1;
@@ -167,11 +164,9 @@ public class Dump
                 } else if ("METHOD".equals(name)) {
                     value = rs.getString(i);
                     sig.setRequestMethod(value);
-                    md5.update(value.getBytes(ENCODING));
                 } else if ("URI".equals(name)) {
                     value = rs.getString(i);
                     sig.setRequestUrl(value);
-                    md5.update(value.getBytes(ENCODING));
                 } else if ("REQHEADER".equals(name)) {
                     value = rs.getString(i)
                             .replace("\r", "\\r")
@@ -207,7 +202,9 @@ public class Dump
                         LOG.warning(format("%n%n%nSkipping NULL %s%n", name));
                         continue;
                     }
-                    final File tmpFile = new File(toHexString(md5.digest()));
+                    // this is because we won't have the fingerprint until
+                    // after the bytes are written to *the file*
+                    final File tmpFile = new File(format("%s.bin", System.nanoTime()));
                     final FileOutputStream fOut = new FileOutputStream(tmpFile);
                     streamOut(stream, fOut);
                     fOut.close();
