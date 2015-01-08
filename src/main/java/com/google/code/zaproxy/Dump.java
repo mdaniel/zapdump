@@ -123,9 +123,9 @@ public class Dump
             final String name = md.getColumnName(i);
             columnNames[i-1] = name;
             final String type = md.getColumnTypeName(i);
-            out.printf("%s|%s", type, name);
+            out.printf("%s|%s", name, type);
         }
-        out.printf("\t%s|%s", "VARCHAR", "FINGERPRINT");
+        out.printf("\t%s|%s", "FINGERPRINT", "VARCHAR");
         out.println();
         int found = 0;
         final int dataHistType = 1;
