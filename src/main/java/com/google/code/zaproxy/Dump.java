@@ -209,16 +209,129 @@ public class Dump
                     final PrintWriter headOut = new PrintWriter(new FileWriter(resHeadersF));
                     headOut.write(resHeaders);
                     headOut.close();
+                    final Map<String, Object> metadata = new HashMap<String, Object>(5);
+                    metadata.put("url", sig.uri);
+                    metadata.put("status", status);
+                    metadata.put("method", sig.method);
+                    metadata.put("timestamp", (float)millis);
+                    metadata.put("response_url", sig.uri);
+                    {
+                        final File meta = new File(outDir, "meta.json");
+                        final PrintWriter metaOut = new PrintWriter(new FileWriter(meta));
+                        for (final Iterator<String> keyIt = metadata.keySet().iterator(); keyIt.hasNext(); ) {
+                            final String key = keyIt.next();
+                            final Object metaVal = metadata.get(key);
+                            final Object val;
+                            if (metaVal instanceof String) {
+                                val = format("\"%s\"", metaVal);
+                            } else {
+                                val = metaVal;
+                            }
+                            metaOut.write(format("\"%s\": %s", key, val));
+                            if (keyIt.hasNext()) {
+                                metaOut.write(",");
+                            }
+                        }
+                        metaOut.close();
+                    }
+                    {
+                        /*
+                        output from `pickletools.dis` for the binary, protocol 2 version
+    0: \x80 PROTO      2
+    2: }    EMPTY_DICT
+    3: q    BINPUT     1
+    5: (    MARK
+    6: U        SHORT_BINSTRING 'url'
+   11: q        BINPUT     2
+   13: U        SHORT_BINSTRING 'facebook://108215512553828'
+   41: q        BINPUT     3
+   43: U        SHORT_BINSTRING 'status'
+   51: q        BINPUT     4
+   53: M        BININT2    404
+   56: U        SHORT_BINSTRING 'method'
+   64: q        BINPUT     5
+   66: U        SHORT_BINSTRING 'GET'
+   71: q        BINPUT     6
+   73: U        SHORT_BINSTRING 'timestamp'
+   84: q        BINPUT     7
+   86: G        BINFLOAT   1393904644.079956
+   95: U        SHORT_BINSTRING 'response_url'
+  109: q        BINPUT     8
+  111: h        BINGET     3
+  113: u        SETITEMS   (MARK at 5)
+  114: .    STOP
 
-                    final File meta = new File(outDir, "meta.json");
-                    final PrintWriter metaOut = new PrintWriter(new FileWriter(meta));
-                    // this is not json, it is a python dict str()ed
-                    metaOut.write(format("{\"url\": \"%s\"", sig.uri));
-                    metaOut.write(format(",\"status\": %d", status));
-                    metaOut.write(format(", \"method\": \"%s\"", sig.method));
-                    metaOut.write(format(", \"timestamp\": %d.00000", millis));
-                    metaOut.write(format(", \"response_url\": \"%s\"}%n", sig.uri));
-                    metaOut.close();
+                        and that same thing for protocol 0 (entirely text based)
+                        the "(" is MARK (as seen above),
+                        "d" is the opcode for dictionary, and
+                        "p1" is the normal "put in bucket 1" just like the other
+                        "p[0-9]" actions. However, "(dp1" must appear on one line
+                        for reasons I didn't look into.
+                        Careful: "I" and "F" don't consume a "p" slot, and they are
+                        terminated with "\ns".
+(dp1
+S'url'
+p2
+S'facebook://108215512553828'
+p3
+sS'status'
+p4
+I404
+sS'response_url'
+p5
+g3
+sS'method'
+p6
+S'GET'
+p7
+sS'timestamp'
+p8
+F1393904644.0799561
+s.
+                         */
+                        final File pyMeta = new File(outDir, "pickled_meta");
+                        final PrintWriter pyMetaOut = new PrintWriter(new FileWriter(pyMeta));
+                        pyMetaOut.write("(d"); // dictionary creation on the stack
+                        int p = 1;
+                        for (final Iterator<String> keyIt = metadata.keySet().iterator();
+                             keyIt.hasNext(); p += 2) {
+                            final String key = keyIt.next();
+                            // I doubt *very* seriously any keys would have quotes in them
+                            final String quotedKey = key.replaceAll("'", "\\\\'");
+                            // have to emit this first, to consume its "p" slot.
+                            pyMetaOut.write(format(
+                                    "p%d\n" +
+                                    "S'%s'\n", p, quotedKey));
+                            final Object metaVal = metadata.get(key);
+                            final String val;
+                            pyMetaOut.write(format(
+                                    "p%d\n", p + 1));
+                            if (metaVal instanceof String) {
+                                final String quoted = metaVal == null ?
+                                        null :
+                                        ((String)metaVal).replaceAll("'", "\\\\'");
+                                val = format("S'%s'\n", quoted);
+                            } else if (metaVal instanceof Integer) {
+                                val = format("I%s\n", metaVal);
+                            } else if (metaVal instanceof Long) {
+                                val = format("L%s\n", metaVal);
+                            } else if (metaVal instanceof Double) {
+                                val = format("F%f\n", (Double)metaVal);
+                            } else if (metaVal instanceof Float) {
+                                val = format("F%f\n", (Float)metaVal);
+                            } else {
+                                throw new IllegalArgumentException(format(
+                                        "Unrecognized metadata type<%s>: %s",
+                                        null == metaVal ? "NULL" : metaVal.getClass().getName(),
+                                        metaVal));
+                            }
+                            pyMetaOut.write(val);
+                            pyMetaOut.write("s"); // SET ITEM (consume k, v)
+                        }
+                        pyMetaOut.write(".\n");
+                        pyMetaOut.close();
+                    }
+
                     LOG.fine(format("Output is in %s%n%n", outDir));
                     }
                 } else {
