@@ -128,6 +128,7 @@ public class Dump
         out.printf("\t%s|%s", "VARCHAR", "FINGERPRINT");
         out.println();
         int found = 0;
+        final int dataHistType = 1;
         while (rs.next()) {
             final SignatureParts sig = new SignatureParts();
             // this is for the temp name
@@ -150,7 +151,7 @@ public class Dump
                     id = value = rs.getString(i);
                 } else if ("HISTTYPE".equals(name)) {
                     value = rs.getString(i);
-                    capture = (1 == Integer.parseInt(value));
+                    capture = (dataHistType == Integer.parseInt(value));
                 } else if ("STATUSCODE".equals(name)) {
                     value = rs.getString(i);
                     status = rs.getInt(i);
@@ -382,7 +383,8 @@ s.
             if (null == onlyUrl) {
                 System.err.println("It appears that database is empty; no rows in HISTORY");
             } else {
-                System.err.printf("Unable to locate any URL like \"%s\"%n", onlyUrl);
+                System.err.printf("Unable to locate any URL like \"%s\" with HISTTYPE=%d%n",
+                        onlyUrl, dataHistType);
             }
             rc = 1;
         } else {
