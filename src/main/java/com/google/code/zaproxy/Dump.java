@@ -129,7 +129,6 @@ public class Dump
         out.println();
         int found = 0;
         while (rs.next()) {
-            found++;
             final SignatureParts sig = new SignatureParts();
             // this is for the temp name
             // because we won't have the fingerprint until
@@ -362,8 +361,10 @@ s.
                         pyMetaOut.write(".\n");
                         pyMetaOut.close();
                     }
-
-                    LOG.fine(format("Output is in %s%n%n", outDir));
+                        LOG.fine(format("Output is in %s%n%n", outDir));
+                        found++;
+                    } else {
+                        LOG.fine(format("Skipping URI %s due to wrong HISTTYPE", sig.uri));
                     }
                 } else {
                     value = rs.getString(i);
